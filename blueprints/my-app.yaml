@@ -1,0 +1,157 @@
+spec_version: 2
+description: Full-stack application environment with VPC, Aurora database, EKS cluster, and API Gateway
+
+inputs:
+  agent:
+    type: agent
+  environment:
+    type: string
+    default: "dev"
+    description: "Environment name (e.g. dev, staging, production)"
+    allowed-values:
+      - "dev"
+      - "staging"
+      - "production"
+  app_name:
+    type: string
+    default: "my-app"
+    description: "Application name used to identify all resources"
+  db_instance_class:
+    type: string
+    default: "db.r6g.large"
+    description: "Database instance size"
+    allowed-values:
+      - "db.r6g.large"
+      - "db.r6g.xlarge"
+      - "db.r6g.2xlarge"
+  db_instance_count:
+    type: string
+    default: "2"
+    description: "Number of Aurora database replicas"
+  k8s_version:
+    type: string
+    default: "1.29"
+    description: "Kubernetes version for the EKS cluster"
+    allowed-values:
+      - "1.28"
+      - "1.29"
+      - "1.30"
+  node_size:
+    type: string
+    default: "m5.large"
+    description: "Worker node instance size"
+    allowed-values:
+      - "m5.large"
+      - "m5.xlarge"
+      - "m5.2xlarge"
+  node_count:
+    type: string
+    default: "3"
+    description: "Number of EKS worker nodes"
+  api_stage:
+    type: string
+    default: "v1"
+    description: "API Gateway deployment stage"
+    allowed-values:
+      - "v1"
+      - "v2"
+      - "staging"
+      - "production"
+
+outputs:
+  api_url:
+    value: '{{ .grains.api-gw.outputs.invoke_url }}'
+    kind: link
+  cluster_endpoint:
+    value: '{{ .grains.eks.outputs.cluster_endpoint }}'
+    kind: link
+  database_endpoint:
+    value: '{{ .grains.aurora.outputs.cluster_endpoint }}'
+  database_reader_endpoint:
+    value: '{{ .grains.aurora.outputs.reader_endpoint }}'
+  database_name:
+    value: '{{ .grains.aurora.outputs.database_name }}'
+  database_port:
+    value: '{{ .grains.aurora.outputs.port }}'
+  vpc_id:
+    value: '{{ .grains.vpc.outputs.vpc_id }}'
+  cluster_name:
+    value: '{{ .grains.eks.outputs.cluster_name }}'
+
+grains:
+  vpc:
+    kind: blueprint
+    spec:
+      source:
+        store: blueprint-update-demo
+        path: blueprints/vpc.yaml
+      inputs:
+        - agent: '{{ .inputs.agent }}'
+        - environment: '{{ .inputs.environment }}'
+      outputs:
+        - vpc_id
+        - vpc_cidr
+        - private_subnet_ids
+        - public_subnet_ids
+        - nat_gateway_ip
+
+  aurora:
+    depends-on: vpc
+    kind: blueprint
+    spec:
+      source:
+        store: blueprint-update-demo
+        path: blueprints/aurora.yaml
+      inputs:
+        - agent: '{{ .inputs.agent }}'
+        - environment: '{{ .inputs.environment }}'
+        - vpc_id: '{{ .grains.vpc.outputs.vpc_id }}'
+        - database_name: '{{ .inputs.app_name }}-db'
+        - instance_class: 'db.r6g.large'
+        - instance_count: '{{ .inputs.db_instance_count }}'
+      outputs:
+        - cluster_id
+        - cluster_endpoint
+        - reader_endpoint
+        - port
+        - database_name
+
+  eks:
+    depends-on: vpc
+    kind: blueprint
+    spec:
+      source:
+        store: blueprint-update-demo
+        path: blueprints/eks.yaml
+      inputs:
+        - agent: '{{ .inputs.agent }}'
+        - environment: '{{ .inputs.environment }}'
+        - vpc_id: '{{ .grains.vpc.outputs.vpc_id }}'
+        - cluster_name: '{{ .inputs.app_name }}'
+        - cluster_version: '{{ .inputs.k8s_version }}'
+        - node_instance_type: '{{ .inputs.node_size }}'
+        - desired_capacity: '{{ .inputs.node_count }}'
+      outputs:
+        - cluster_name
+        - cluster_endpoint
+        - cluster_arn
+        - oidc_issuer
+        - cluster_version
+
+  api-gw:
+    depends-on: eks
+    kind: blueprint
+    spec:
+      source:
+        store: blueprint-update-demo
+        path: blueprints/api-gw.yaml
+      inputs:
+        - agent: '{{ .inputs.agent }}'
+        - environment: '{{ .inputs.environment }}'
+        - api_name: '{{ .inputs.app_name }}-api'
+        - stage_name: '{{ .inputs.api_stage }}'
+      outputs:
+        - invoke_url
+        - api_id
+        - api_arn
+        - stage_name

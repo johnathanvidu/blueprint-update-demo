@@ -1,0 +1,74 @@
+spec_version: 2
+description: Deploy a mock Aurora PostgreSQL cluster with configurable instances
+
+inputs:
+  agent:
+    type: agent
+  environment:
+    type: string
+    default: "dev"
+    description: "Environment name"
+  vpc_id:
+    type: string
+    description: "VPC ID where Aurora will be deployed"
+  private_subnet_ids:
+    type: string
+    description: "Comma-separated private subnet IDs for the DB subnet group"
+  database_name:
+    type: string
+    default: "appdb"
+    description: "Name of the default database"
+  master_username:
+    type: string
+    default: "dbadmin"
+    description: "Master username for the cluster"
+  instance_class:
+    type: string
+    default: "db.r6g.large"
+    description: "Instance class for Aurora instances"
+    allowed-values:
+      - "db.r6g.large"
+      - "db.r6g.xlarge"
+      - "db.r6g.2xlarge"
+  instance_count:
+    type: string
+    default: "2"
+    description: "Number of Aurora instances"
+
+outputs:
+  cluster_endpoint:
+    value: '{{ .grains.aurora.outputs.cluster_endpoint }}'
+  reader_endpoint:
+    value: '{{ .grains.aurora.outputs.reader_endpoint }}'
+  port:
+    value: '{{ .grains.aurora.outputs.port }}'
+  database_name:
+    value: '{{ .grains.aurora.outputs.database_name }}'
+  cluster_id:
+    value: '{{ .grains.aurora.outputs.cluster_id }}'
+
+grains:
+  aurora:
+    kind: terraform
+    spec:
+      source:
+        store: blueprint-update-demo
+        path: terraform/aurora
+      agent:
+        name: '{{ .inputs.agent }}'
+      inputs:
+        - environment: '{{ .inputs.environment }}'
+        - vpc_id: '{{ .inputs.vpc_id }}'
+        - database_name: '{{ .inputs.database_name }}'
+        - master_username: 'quali'
+        - instance_class: '{{ .inputs.instance_class }}'
+        - instance_count: '{{ .inputs.instance_count }}'
+      outputs:
+        - cluster_id
+        - cluster_endpoint
+        - reader_endpoint
+        - port
+        - database_name
+        - master_username
+        - security_group_id
+        - instance_ids

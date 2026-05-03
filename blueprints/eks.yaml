@@ -1,0 +1,80 @@
+spec_version: 2
+description: Deploy a mock EKS cluster with managed node groups
+
+inputs:
+  agent:
+    type: agent
+  environment:
+    type: string
+    default: "dev"
+    description: "Environment name"
+  vpc_id:
+    type: string
+    description: "VPC ID for the EKS cluster"
+  private_subnet_ids:
+    type: string
+    description: "Comma-separated private subnet IDs for EKS worker nodes"
+  cluster_name:
+    type: string
+    default: "app-cluster"
+    description: "Name of the EKS cluster"
+  cluster_version:
+    type: string
+    default: "1.29"
+    description: "Kubernetes version"
+    allowed-values:
+      - "1.28"
+      - "1.29"
+      - "1.30"
+  node_instance_type:
+    type: string
+    default: "m5.large"
+    description: "EC2 instance type for worker nodes"
+    allowed-values:
+      - "m5.large"
+      - "m5.xlarge"
+      - "m5.2xlarge"
+  desired_capacity:
+    type: string
+    default: "3"
+    description: "Desired number of worker nodes"
+
+outputs:
+  cluster_name:
+    value: '{{ .grains.eks.outputs.cluster_name }}'
+  cluster_endpoint:
+    value: '{{ .grains.eks.outputs.cluster_endpoint }}'
+    kind: link
+  cluster_arn:
+    value: '{{ .grains.eks.outputs.cluster_arn }}'
+  oidc_issuer:
+    value: '{{ .grains.eks.outputs.oidc_issuer }}'
+  cluster_version:
+    value: '{{ .grains.eks.outputs.cluster_version }}'
+
+grains:
+  eks:
+    kind: terraform
+    spec:
+      source:
+        store: blueprint-update-demo
+        path: terraform/eks
+      agent:
+        name: '{{ .inputs.agent }}'
+      inputs:
+        - environment: '{{ .inputs.environment }}'
+        - vpc_id: '{{ .inputs.vpc_id }}'
+        - cluster_name: '{{ .inputs.cluster_name }}'
+        - cluster_version: '{{ .inputs.cluster_version }}'
+        - node_instance_type: '{{ .inputs.node_instance_type }}'
+        - desired_capacity: '{{ .inputs.desired_capacity }}'
+      outputs:
+        - cluster_name
+        - cluster_arn
+        - cluster_endpoint
+        - cluster_ca_certificate
+        - oidc_issuer
+        - cluster_security_group_id
+        - node_group_name
+        - node_role_arn
+        - cluster_version

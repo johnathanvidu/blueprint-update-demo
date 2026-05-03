@@ -1,0 +1,47 @@
+spec_version: 2
+description: Deploy a mock VPC with public and private subnets, NAT Gateway, and Internet Gateway
+
+inputs:
+  agent:
+    type: agent
+  environment:
+    type: string
+    default: "dev"
+    description: "Environment name"
+  vpc_cidr:
+    type: string
+    default: "10.0.0.0/16"
+    description: "CIDR block for the VPC"
+
+outputs:
+  vpc_id:
+    value: '{{ .grains.vpc.outputs.vpc_id }}'
+  vpc_cidr:
+    value: '{{ .grains.vpc.outputs.vpc_cidr }}'
+  private_subnet_ids:
+    value: '{{ .grains.vpc.outputs.private_subnet_ids }}'
+  public_subnet_ids:
+    value: '{{ .grains.vpc.outputs.public_subnet_ids }}'
+  nat_gateway_ip:
+    value: '{{ .grains.vpc.outputs.nat_gateway_ip }}'
+
+grains:
+  vpc:
+    kind: terraform
+    spec:
+      source:
+        store: blueprint-update-demo
+        path: terraform/vpc
+      agent:
+        name: '{{ .inputs.agent }}'
+      inputs:
+        - environment: '{{ .inputs.environment }}'
+        - vpc_cidr: '{{ .inputs.vpc_cidr }}'
+      outputs:
+        - vpc_id
+        - vpc_cidr
+        - private_subnet_ids
+        - public_subnet_ids
+        - availability_zones
+        - nat_gateway_ip
+        - igw_id

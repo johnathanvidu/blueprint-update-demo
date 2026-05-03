@@ -1,0 +1,69 @@
+spec_version: 2
+description: Deploy a mock API Gateway with VPC link and configurable endpoints
+
+inputs:
+  agent:
+    type: agent
+  environment:
+    type: string
+    default: "dev"
+    description: "Environment name"
+  api_name:
+    type: string
+    default: "app-api"
+    description: "Name of the API Gateway"
+  api_description:
+    type: string
+    default: "Application REST API"
+    description: "Description of the API Gateway"
+  stage_name:
+    type: string
+    default: "v1"
+    description: "Deployment stage name"
+    allowed-values:
+      - "v1"
+      - "v2"
+      - "staging"
+      - "production"
+  enable_cors:
+    type: string
+    default: "true"
+    description: "Enable CORS on the API"
+    allowed-values:
+      - "true"
+      - "false"
+
+outputs:
+  invoke_url:
+    value: '{{ .grains.api-gw.outputs.invoke_url }}'
+    kind: link
+  api_id:
+    value: '{{ .grains.api-gw.outputs.api_id }}'
+  api_arn:
+    value: '{{ .grains.api-gw.outputs.api_arn }}'
+  stage_name:
+    value: '{{ .grains.api-gw.outputs.stage_name }}'
+
+grains:
+  api-gw:
+    kind: terraform
+    spec:
+      source:
+        store: blueprint-update-demo
+        path: terraform/api-gw
+      agent:
+        name: '{{ .inputs.agent }}'
+      inputs:
+        - environment: '{{ .inputs.environment }}'
+        - api_name: '{{ .inputs.api_name }}'
+        - api_description: '{{ .inputs.api_description }}'
+        - stage_name: '{{ .inputs.stage_name }}'
+        - enable_cors: '{{ .inputs.enable_cors }}'
+      outputs:
+        - api_id
+        - api_arn
+        - execution_arn
+        - invoke_url
+        - stage_name
+        - vpc_link_id
+        - resource_ids
