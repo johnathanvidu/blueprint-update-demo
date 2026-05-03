@@ -60,26 +60,26 @@ inputs:
 
 outputs:
   api_url:
-    value: '{{ .grains.api-gw.outputs.invoke_url }}'
+    value: '{{ .grains.api-gw-myapp.outputs.invoke_url }}'
     kind: link
   cluster_endpoint:
-    value: '{{ .grains.eks.outputs.cluster_endpoint }}'
+    value: '{{ .grains.eks-myapp.outputs.cluster_endpoint }}'
     kind: link
   database_endpoint:
-    value: '{{ .grains.aurora.outputs.cluster_endpoint }}'
+    value: '{{ .grains.aurora-myapp.outputs.cluster_endpoint }}'
   database_reader_endpoint:
-    value: '{{ .grains.aurora.outputs.reader_endpoint }}'
+    value: '{{ .grains.aurora-myapp.outputs.reader_endpoint }}'
   database_name:
-    value: '{{ .grains.aurora.outputs.database_name }}'
+    value: '{{ .grains.aurora-myapp.outputs.database_name }}'
   database_port:
-    value: '{{ .grains.aurora.outputs.port }}'
+    value: '{{ .grains.aurora-myapp.outputs.port }}'
   vpc_id:
-    value: '{{ .grains.vpc.outputs.vpc_id }}'
+    value: '{{ .grains.vpc-myapp.outputs.vpc_id }}'
   cluster_name:
-    value: '{{ .grains.eks.outputs.cluster_name }}'
+    value: '{{ .grains.eks-myapp.outputs.cluster_name }}'
 
 grains:
-  vpc:
+  vpc-myapp:
     kind: blueprint
     spec:
       source:
@@ -95,8 +95,8 @@ grains:
         - public_subnet_ids
         - nat_gateway_ip
 
-  aurora:
-    depends-on: vpc
+  aurora-myapp:
+    depends-on: vpc-myapp
     kind: blueprint
     spec:
       source:
@@ -116,8 +116,8 @@ grains:
         - port
         - database_name
 
-  eks:
-    depends-on: vpc
+  eks-myapp:
+    depends-on: vpc-myapp
     kind: blueprint
     spec:
       source:
@@ -126,7 +126,7 @@ grains:
       inputs:
         - agent: '{{ .inputs.agent }}'
         - environment: '{{ .inputs.environment }}'
-        - vpc_id: '{{ .grains.vpc.outputs.vpc_id }}'
+        - vpc_id: '{{ .grains.vpc-myapp.outputs.vpc_id }}'
         - cluster_name: '{{ .inputs.app_name }}'
         - cluster_version: '{{ .inputs.k8s_version }}'
         - node_instance_type: '{{ .inputs.node_size }}'
@@ -138,8 +138,8 @@ grains:
         - oidc_issuer
         - cluster_version
 
-  api-gw:
-    depends-on: eks
+  api-gw-myapp:
+    depends-on: eks-myapp
     kind: blueprint
     spec:
       source:
