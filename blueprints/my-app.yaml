@@ -107,7 +107,7 @@ grains:
         - environment: '{{ .inputs.environment }}'
         - vpc_id: '{{ .grains.vpc-myapp.outputs.vpc_id }}'
         - database_name: '{{ .inputs.app_name }}-db'
-        - instance_class: '{{ .inputs.db_instance_class }}'
+        - instance_class: 'db.r6g.large'
         - instance_count: '{{ .inputs.db_instance_count }}'
       outputs:
         - cluster_id
